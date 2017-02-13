@@ -4,7 +4,6 @@
 
  	slots 'acceptSettings()'
 
-
 	attr_reader :username,
 							:serverAddr,
 							:serverPort

@@ -79,7 +79,6 @@ class Chat < Qt::Widget
 
 			rescue => err
 				puts "Ошибка #{err}"
-				#Qt::MessageBox.about(self,"Ошибка!!!", "Похоже, что-то пошло не так при отключении.\n:СССС")
 				Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения:</b> #{err}".force_encoding('UTF-8'))}
 			end
 		end
