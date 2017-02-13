@@ -1,5 +1,4 @@
-1
-2
-3
+Simple(or not) chat messenger written in ruby and qt.
 
-4
+Dependences:
+qtbindings
