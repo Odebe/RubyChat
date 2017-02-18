@@ -6,7 +6,6 @@ class MainProgram
   require 'base64'
   require './chat.rb' 
   require './networking.rb'
-  require './settings.rb'
 
   def initialize
     @app = Qt::Application.new(ARGV)
