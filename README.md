@@ -1,3 +1,4 @@
+# RubyChat
 Simple *(or not)* chat messenger written in ruby and qt.
 
 Dependences:
