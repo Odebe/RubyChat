@@ -6,11 +6,11 @@ class Server
 
   def initialize( port, ip )
     @users = {
-      "admin": "admin",
-      "user": "user"}
+      "admin" => "admin",
+      "user" => "user"}
     @states = {
-      "menu": ["help", "lsu", "lsr", "jr"],
-      "chatting": ["exit"]
+      "menu" => ["help", "lsu", "lsr", "jr"],
+      "chatting" => ["exit"]
     }
     @server = TCPServer.open( ip, port )
     @connections = Hash.new
@@ -26,64 +26,58 @@ class Server
     loop {
       Thread.start(@server.accept) do | client |
         init_mes = client.gets.chomp.to_s.split(":")
+#force_encoding(Encoding::UTF_8)
+
         users_name = init_mes[0]
         users_pass = init_mes[1]
-
-        if users_name == @users[users_name] || users_pass == @users[users_pass]
-
-          @connections[:clients].each do |other_name, other_client|
-            if nick_name == other_name || client == other_client
-              client.puts "This username already exist"
-              Thread.kill self
+      
+        
+            @connections[:clients].each do |other_name, other_client|
+              if init_mes[0] == other_name || client == other_client
+                client.puts "This username already exist"
+                Thread.kill self
+              end
             end
-          end
 
-        puts "#{nick_name} #{client}"
-        @connections[:clients][nick_name] = client
-        client.puts "Connection established, Thank you for joining! Happy chatting"
-        listen_user_messages( nick_name, client )
-
-        end
+            if  @users[users_name] == users_pass 
+              puts "#{users_name} #{client}"
+              @connections[:clients][users_name] = client
+              client.puts "Connection established, Thank you for joining! Happy chatting"
+              listen_user_messages( users_name, client )
+            end
       end
     }.join
   end
 
   def listen_user_messages( username, client )
-    state = "menu"
     loop {
       msg = client.gets.chomp
       if msg[0..1] == ";;"
-        command = mes.delete_at(0..1)
-        check_command(state, command)
+        do_command(msg, client, username)
       else
         #послать сообщение всем в комнате
       end
     }
   end
 
-  def do_command(command)
+  def do_command(command, client, username)
     case command
-    when "lsu"
-
-    when "lsr"
-
-    when "help"
-
-    when ""
+    when ";;lsu"
+      client.puts "#{@connections[:clients]}"
+    when ";;lsr"
+      client.puts "#{@connections[:rooms]}"
+    when ";;es"
+      @connections[:clients].delete(username)
+      puts "#{username} off"
+      Thread.kill self
+    end
   end
 
-  def check_command(state, command)
+
+  def check_command(state, command) #уже не нужна эта функция, но может понадобиться в будущем
     @states[state].each { |prob_comm| do_command(command) if prob_comm == command }
   end
 
-  def set_state(state)
-    case state
-    when 2
-
-    when 3
-
-    end
-  end
 
 end
 

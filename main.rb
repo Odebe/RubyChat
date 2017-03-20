@@ -3,7 +3,7 @@
 class MainProgram 
 
   require 'Qt'
-  require 'base64'
+  # require 'base64'
   require './chat.rb' 
   require './networking.rb'
 
@@ -18,6 +18,7 @@ class MainProgram
 
     @ch = Chat.new
     @ch.set_networking(@net)
+    @ch.setMainProgram(self)
     #@ch.setUserName(user)
 
     @ch.show
@@ -33,6 +34,7 @@ class MainProgram
         end
   end
 
+
   def is_there_mes_from_client(clientMes)
         unless clientMes  == nil 
           #@ch.addMessage('main.rb', "Ответ на \"#{clientMes}\"")
@@ -47,7 +49,7 @@ class MainProgram
   end
 
   def start_chating
-    thread = Thread.new do
+    @thread = Thread.new do
       loop do
         is_there_mes_from_server(@net.resp[:mesFromServer])
         #servMes = @net.resp[:mesFromServer]
@@ -56,6 +58,11 @@ class MainProgram
       end
     end
   end
+
+  def stop_shatting
+    @thread.kill
+  end
+
 end
 
 m = MainProgram.new

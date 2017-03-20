@@ -6,15 +6,15 @@ class Networking
   attr_accessor  :resp, :addr, :port
 
   def initialize
-    @user = "User1"
     #sending(@user)
     @mesFromServer = nil
   end
 
-  def start
+  def start(name, pass)
       listen
       @mainPr.start_chating
-      sending(@user)
+      start_mes = "#{name}:#{pass}"
+      sending(start_mes)
   end
 
   def connect

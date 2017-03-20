@@ -79,7 +79,7 @@
   end
 
   def acceptSettings()
-    @settings.setValue("username", Qt::Variant.new(@usernameEditor.text.to_s.force_encoding('UTF-8')))
+    @settings.setValue("username", Qt::Variant.new(@usernameEditor.text.to_s.force_encoding(Encoding::UTF_8)))
     @settings.setValue("addr", Qt::Variant.new(@addrEditor.text.to_s))
     @settings.setValue("port", Qt::Variant.new(@portEditor.text.to_i))
     readSettings
@@ -88,23 +88,26 @@
   end
 
   def getSet
+    createSettings
+=begin
     if @settings == nil
       createSettings
     else
       readSettings
     end
+=end
   end
 
   def readSettings
     puts "All keys: #{@settings.allKeys}"
-    @username = @settings.value("username").toString.force_encoding('UTF-8')
-    @serverAddr = @settings.value("addr").toString.force_encoding('UTF-8')
-    @serverPort =  @settings.value("port").toString.force_encoding('UTF-8')
+    @username =  @settings.value("username").toString.force_encoding(Encoding::UTF_8)
+    @serverAddr = @settings.value("addr").toString.force_encoding(Encoding::UTF_8)
+    @serverPort =  @settings.value("port").toString.force_encoding(Encoding::UTF_8)
     @settings.sync()
   end
 
   def createSettings
-    @settings.setValue("username", Qt::Variant.new("Админ"))
+    @settings.setValue("username", Qt::Variant.new("admin"))
     @settings.setValue("addr", Qt::Variant.new("localhost"))
     @settings.setValue("port", Qt::Variant.new(3000))
     readSettings

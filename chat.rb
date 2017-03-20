@@ -49,12 +49,16 @@ class Chat < Qt::Widget
         m.menuBar = @menuBar
       end
 
+      @sendButton.setShortcut(Qt::KeySequence.new(Qt::Key_Return))
 
       setLayout(lllayout)
       connect(@sendButton, SIGNAL('clicked()'), self, SLOT('messend()'))
 
       setWindowTitle("Chat")
 
+    end
+    def setMainProgram(main)
+      @mainProgram = main
     end
 
     def set_networking(networking)
@@ -63,7 +67,9 @@ class Chat < Qt::Widget
 
     def getNewSettings
       @userName = @clientSettingsDialog.username
+      #@password = "admin"
     end
+
 
     def clientSettings()
       @clientSettingsDialog.startView
@@ -71,26 +77,29 @@ class Chat < Qt::Widget
 
     def setUserName()
       @userName = @clientSettingsDialog.username
+      @password = "admin"
     end
 
     def disconnection()
       begin
+        @net.sending(";;es")
+        @mainProgram.stop_shatting
         @net.sockClose
 
       rescue => err
         puts "Ошибка #{err}"
-        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения:</b> #{err}".force_encoding('UTF-8'))}
+        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения:</b> #{err}".force_encoding(Encoding::UTF_8))}
       end
     end
 
     def connection()
       begin
         @net.connect
-
+        @net.start(@userName, @password)
       rescue => err
         #puts "Ошибка #{err}"
         #Qt::MessageBox.about(self,"Ошибка!!!", "#{err}")
-        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка подключения:</b> #{err}".force_encoding('UTF-8'))}
+        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка подключения:</b> #{err}".force_encoding(Encoding::UTF_8))}
       end
     end
 
@@ -103,25 +112,25 @@ class Chat < Qt::Widget
 
       @menuBar = Qt::MenuBar.new
 
-      @fileMenu = Qt::Menu.new("&Файл".force_encoding('UTF-8'), self)
-      @helpMenu = Qt::Menu.new("&Помощь".force_encoding('UTF-8'), self)
-      @setMenu = Qt::Menu.new("&Настройки".force_encoding('UTF-8'), self)
+      @fileMenu = Qt::Menu.new("&Файл".force_encoding(Encoding::UTF_8), self)
+      @helpMenu = Qt::Menu.new("&Помощь".force_encoding(Encoding::UTF_8), self)
+      @setMenu = Qt::Menu.new("&Настройки".force_encoding(Encoding::UTF_8), self)
 
-      @connectAct = Qt::Action.new("Подключиться".force_encoding('UTF-8'), self)
+      @connectAct = Qt::Action.new("Подключиться".force_encoding(Encoding::UTF_8), self)
       connect(@connectAct, SIGNAL('triggered()'), self, SLOT('connection()'))
 
-      @disconnectAct = Qt::Action.new("Отключиться".force_encoding('UTF-8'), self)
+      @disconnectAct = Qt::Action.new("Отключиться".force_encoding(Encoding::UTF_8), self)
       connect(@disconnectAct, SIGNAL('triggered()'), self, SLOT('disconnection()'))
 
-      @exitAct = Qt::Action.new("Закрыть".force_encoding('UTF-8'), self)
+      @exitAct = Qt::Action.new("Закрыть".force_encoding(Encoding::UTF_8), self)
       @exitAct.shortcut = Qt::KeySequence.new( tr("Ctrl+Q") )
       connect(@exitAct, SIGNAL('triggered()'), self, SLOT('close()'))
 
-      @aboutAct = Qt::Action.new("О программе".force_encoding('UTF-8'), self)
+      @aboutAct = Qt::Action.new("О программе".force_encoding(Encoding::UTF_8), self)
       @aboutAct.shortcut = Qt::KeySequence.new( tr("Ctrl+H") )
       connect(@aboutAct, SIGNAL('triggered()'), self, SLOT('about()'))
 
-      @setClientAct = Qt::Action.new("Клиент".force_encoding('UTF-8'),self)
+      @setClientAct = Qt::Action.new("Клиент".force_encoding(Encoding::UTF_8),self)
       connect(@setClientAct, SIGNAL('triggered()'),self,SLOT('clientSettings()'))
 
       @fileMenu.addAction(@connectAct)
@@ -140,12 +149,12 @@ class Chat < Qt::Widget
 
     def addMessage(user, text)
       Qt.execute_in_main_thread{
-        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding('UTF-8'))}
+        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))}
     end
 
     def addMessgeFserv(text)
       Qt.execute_in_main_thread{
-        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + text.to_s.force_encoding('UTF-8'))}
+        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + text.to_s.force_encoding(Encoding::UTF_8))}
     end
 
     def getMessage
@@ -164,6 +173,7 @@ class Chat < Qt::Widget
         @mesLine.clear
       end
     end
+
 
 
 
