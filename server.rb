@@ -62,10 +62,17 @@ class Server
 
   def do_command(command, client, username)
     case command
+
     when ";;lsu"
-      client.puts "#{@connections[:clients]}"
+      mes = Array.new
+      @connections[:clients].each do |key, value|
+        mes << key
+      end
+      client.puts "Online users: #{mes}"
+
     when ";;lsr"
       client.puts "#{@connections[:rooms]}"
+
     when ";;es"
       @connections[:clients].delete(username)
       puts "#{username} off"
