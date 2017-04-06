@@ -1,24 +1,26 @@
  # encoding: UTF-8
- 
+ require 'yaml'
+
  class ClientSettings < Qt::Dialog
 
   slots 'acceptSettings()'
 
   attr_reader :username,
+              :password,
               :serverAddr,
               :serverPort
   
   def initialize
     super
 
-    @settings = Qt::Settings.new("chat.conf", "Chat")
     getSet
-
+    #@mainWindow.setNewSettings(@serverAddr, @serverPort, @username, @password)
     createForms
   end
 
   def getChat(chat)
     @mainWindow = chat
+    @mainWindow.getNewSettings
   end
 
   def startView
@@ -26,11 +28,12 @@
     @addrEditor.clear
     @portEditor.clear
     @usernameEditor.clear
+    @passEditor.clear
 
     @addrEditor.insert(@serverAddr)
     @portEditor.insert(@serverPort)
     @usernameEditor.insert(@username)
-
+    @passEditor.insert(@password)
 
     self.exec
   end
@@ -41,8 +44,10 @@
     linesLayout = Qt::HBoxLayout.new
     labelsLayout = Qt::HBoxLayout.new
     usernameLayout = Qt::HBoxLayout.new
+    passLayout = Qt::HBoxLayout.new
 
     userLabel = Qt::Label.new("Имя пользователя")
+    passLabel = Qt::Label.new("Пароль")
     addrLabel = Qt::Label.new("Адресс")
     portLabel = Qt::Label.new("Порт")
 
@@ -52,9 +57,13 @@
     @addrEditor = Qt::LineEdit.new
     @portEditor = Qt::LineEdit.new
     @usernameEditor = Qt::LineEdit.new
+    @passEditor = Qt::LineEdit.new
 
     usernameLayout.addWidget(userLabel)
     usernameLayout.addWidget(@usernameEditor) 
+
+    passLayout.addWidget(passLabel)
+    passLayout.addWidget(@passEditor) 
 
     acceptButton = Qt::PushButton.new("Принять")
     denyButton = Qt::PushButton.new("Отмена")
@@ -71,6 +80,7 @@
       n.addLayout(labelsLayout)
       n.addLayout(linesLayout)
       n.addLayout(usernameLayout)
+      n.addLayout(passLayout)
       n.addLayout(buttonsLayout)
     end
 
@@ -79,37 +89,40 @@
   end
 
   def acceptSettings()
-    @settings.setValue("username", Qt::Variant.new(@usernameEditor.text.to_s.force_encoding(Encoding::UTF_8)))
-    @settings.setValue("addr", Qt::Variant.new(@addrEditor.text.to_s))
-    @settings.setValue("port", Qt::Variant.new(@portEditor.text.to_i))
+    @settings["login"] = @usernameEditor.text.to_s.force_encoding(Encoding::UTF_8)
+    @settings["server"] =  @addrEditor.text.to_s
+    @settings["port"] =   @portEditor.text.to_i
+    @settings["password"] = @passEditor.text.to_s
     readSettings
+    File.open("settings.yml", "w").write @settings.to_yaml
     @mainWindow.getNewSettings
     self.close
   end
 
   def getSet
-    createSettings
-=begin
-    if @settings == nil
+    begin
+     @settings = YAML::load_file "settings.yml"
+    rescue 
       createSettings
-    else
-      readSettings
     end
-=end
+    readSettings
+
   end
 
   def readSettings
-    puts "All keys: #{@settings.allKeys}"
-    @username =  @settings.value("username").toString.force_encoding(Encoding::UTF_8)
-    @serverAddr = @settings.value("addr").toString.force_encoding(Encoding::UTF_8)
-    @serverPort =  @settings.value("port").toString.force_encoding(Encoding::UTF_8)
-    @settings.sync()
+    puts "All keys: #{@settings}"
+    @username =  @settings["login"].to_s
+    @serverAddr = @settings["server"].to_s
+    @serverPort =  @settings["port"].to_s
+    @password = @settings["password"].to_s
   end
 
   def createSettings
-    @settings.setValue("username", Qt::Variant.new("admin"))
-    @settings.setValue("addr", Qt::Variant.new("localhost"))
-    @settings.setValue("port", Qt::Variant.new(3000))
+    @settings = { "server" => "localhost",
+                  "port" => 3000,
+                  "login" => "guest",
+                  "password" => ""}
+    File.open("settings.yml", "w").write @settings.to_yaml
     readSettings
   end
 
