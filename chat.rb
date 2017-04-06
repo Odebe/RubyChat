@@ -8,6 +8,7 @@ class Chat < Qt::Widget
   # require 'base64'
   require './chat.rb' 
   require './networking.rb'
+  require './chatTab.rb'
 
     slots 'messend()',
           'connection()',
@@ -29,6 +30,11 @@ class Chat < Qt::Widget
       @net.setMainProgram(self)
       @net.setServersInfo(@serverAddr, @serverPort)
 
+
+      @chatTab = ChatTab.new
+      self.addWidget(@chatTab)
+      @chatTab.show
+=begin
       @smallEditor = Qt::TextEdit.new
       @smallEditor.setReadOnly(true)
       @smallEditor.setPlainText("Начало работы\n==========")
@@ -46,6 +52,8 @@ class Chat < Qt::Widget
         b.addWidget(@mesLine)
         b.addWidget(@sendButton)
       end
+
+
       self.setFixedSize(350, 300)
       puts self.size.to_s
 
@@ -57,14 +65,21 @@ class Chat < Qt::Widget
         m.addLayout(@layout)
         m.menuBar = @menuBar
       end
+=end
+      #@sendButton.setShortcut(Qt::KeySequence.new(Qt::Key_Return))
 
-      @sendButton.setShortcut(Qt::KeySequence.new(Qt::Key_Return))
+      makeTabs
 
-      setLayout(lllayout)
-      connect(@sendButton, SIGNAL('clicked()'), self, SLOT('messend()'))
+      #setLayout(lllayout)
+      #connect(@sendButton, SIGNAL('clicked()'), self, SLOT('messend()'))
 
       setWindowTitle("RubyChat_2.0")
 
+    end
+
+    def makeTabs
+      @tabs =  Qt::TabWidget.new
+      @tabs.addTab(GeneralTab.new(fileInfo), tr("General"))
     end
 
     def send_to_s(clientMes)
@@ -109,9 +124,8 @@ class Chat < Qt::Widget
         #@mainProgram.stop_shatting
         #@net.sockClose
 
-      rescue => err
-        puts "Ошибка #{err}"
-        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения:</b> #{err}".force_encoding(Encoding::UTF_8))}
+      rescue 
+        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения.</b>".force_encoding(Encoding::UTF_8))}
       end
     end
 
