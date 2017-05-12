@@ -1,12 +1,13 @@
 # encoding: utf-8
 
 #require 'Qt'
-require './client_settings.rb'
+
 
 class Chat < Qt::Widget
 
-  # require 'base64'
-  require './chat.rb' 
+  require 'base64'
+  # require './chat.rb' 
+  require './client_settings.rb'
   require './networking.rb'
   require './chatTab.rb'
 
@@ -15,25 +16,37 @@ class Chat < Qt::Widget
           'about()',
           'disconnection()',
           'clientSettings()',
-          'serverSettings()'
+          'serverSettings()',
+          'destroyall()'
 
-    attr_reader :message 
+    attr_reader :message, :net
 
     def initialize
       super
+    
 
       @clientSettingsDialog = ClientSettings.new
       @clientSettingsDialog.getChat(self)
       getNewSettings
 
-      @net = Networking.new
-      @net.setMainProgram(self)
+
+      @net = Networking.new(self)
+      #@net.setMainProgram(self)
       @net.setServersInfo(@serverAddr, @serverPort)
 
+      @self = self
+      @chats = {
+        #{}"server" => ChatTab.new(@self)
+      }
+      @tabs =  Qt::TabWidget.new
+      addNewTab("console")
+      addNewTab("online")
+      #@chats["server"].getname(@userName, "server") 
 
-      @chatTab = ChatTab.new
-      self.addWidget(@chatTab)
-      @chatTab.show
+
+      #@chatTab = ChatTab.new
+      #self.addWidget(@chatTab)
+      #@chatTab.show
 =begin
       @smallEditor = Qt::TextEdit.new
       @smallEditor.setReadOnly(true)
@@ -43,8 +56,9 @@ class Chat < Qt::Widget
       #@mesLine.setPlainText("Сообщение.".force_encoding('UTF-8'))
       @mesLine.setMaximumHeight(75)
       @mesLine.autoFormatting
+=end      
       createMenu
-
+=begin
       @sendButton = Qt::PushButton.new('Отправить')
 
       @buttonLayout = Qt::HBoxLayout.new do |b|
@@ -53,36 +67,62 @@ class Chat < Qt::Widget
         b.addWidget(@sendButton)
       end
 
-
+=end
       self.setFixedSize(350, 300)
       puts self.size.to_s
+      #makeTabs
+
+      #addNewTab("mda")
+      #lolButton = Qt::PushButton.new("Принять")
 
       lllayout = Qt::VBoxLayout.new do |m|
+=begin
         @layout = Qt::VBoxLayout.new do |n|
           n.addWidget(@smallEditor)
           n.addLayout(@buttonLayout)
         end
-        m.addLayout(@layout)
+=end
+        #m.addWidget(lolButton)
+        m.addWidget(@tabs)
         m.menuBar = @menuBar
       end
-=end
+
       #@sendButton.setShortcut(Qt::KeySequence.new(Qt::Key_Return))
 
-      makeTabs
 
-      #setLayout(lllayout)
-      #connect(@sendButton, SIGNAL('clicked()'), self, SLOT('messend()'))
+      setLayout(lllayout)
+      #connect(lolButton, SIGNAL('clicked()'), self, SLOT('destroyall()'))
 
-      setWindowTitle("RubyChat_2.0")
+      setWindowTitle("RubyChat_3.0_superAlpha")
 
+    end
+
+    def destroyall
+      @chats["destroy"] = ChatTab.new(@self)
+      @chats["destroy"].owner = @userName
+      @chats["destroy"].whom = "destroy"
+      @tabs.addTab(@chats["destroy"], tr("destroy"))
+    end
+
+    def addNewTab(name)
+      @chats[name] = ChatTab.new(@self)
+      @chats[name].owner = @userName
+      @chats[name].whom = name
+      @tabs.addTab(@chats[name], tr(name))
     end
 
     def makeTabs
       @tabs =  Qt::TabWidget.new
-      @tabs.addTab(GeneralTab.new(fileInfo), tr("General"))
+      #i = 0
+      @chats.each do |key, value|
+        @tabs.addTab(@chats[key], tr(key))
+        #@tabs.setTabText(@chats[key], "#{i}")
+       # i += 1
+      end
+     # @tabs.addTab(@chats["server"], tr("Server"))
     end
 
-    def send_to_s(clientMes)
+    def send_to_s(clientMes) #вроде как не нужна уже
       puts "#{clientMes}"
       @net.sending(clientMes) if clientMes != nil
     end
@@ -97,14 +137,20 @@ class Chat < Qt::Widget
       @net.setServersInfo(@serverAddr, @serverPort)
     end
 
-
+    def NetCheck
+      @net.con
+    end
 
     def getNewSettings
       @userName = @clientSettingsDialog.username
       @password = @clientSettingsDialog.password
       @serverAddr = @clientSettingsDialog.serverAddr
       @serverPort = @clientSettingsDialog.serverPort
-
+      if @chats != nil
+        @chats.each do |name, chat|
+          chat.owner = @userName
+        end
+      end
     end
 
 
@@ -120,12 +166,15 @@ class Chat < Qt::Widget
 
     def disconnection()
       begin
-        @net.sending(";;es")
+        @net.makeYamlMes("disconnect", "command", "console")
+        #@net.sending(";;es")
         #@mainProgram.stop_shatting
         #@net.sockClose
 
       rescue 
-        Qt.execute_in_main_thread {@smallEditor.append("<b>Ошибка отключения.</b>".force_encoding(Encoding::UTF_8))}
+        #Qt.execute_in_main_thread {
+          @chats["console"].addMessage("console","<b>Ошибка отключения.</b>".force_encoding(Encoding::UTF_8))
+        #}
       end
     end
 
@@ -146,14 +195,15 @@ class Chat < Qt::Widget
         #Qt::MessageBox.about(self,"Ошибка!!!", "#{err}")
         #Qt.execute_in_main_thread {
           puts err
-          @smallEditor.append("<b>Ошибка подключения.</b> Проверьте правильность введённого адреса сервера.")
+          @chats["console"].addMessage("console","<b>Ошибка подключения.</b> Проверьте правильность введённого адреса сервера.")
+          #@chats["server"].smallEditor.append("<b>Ошибка подключения.</b> Проверьте правильность введённого адреса сервера.")
         #}
       end
     end
 
     def about()
-      test = "Вот такой вот чатик.\nПока он работает плохо, но я стараюь это исправить.\nВерсия от 31.03.2017 13:26."
-        Qt::MessageBox.about(self,"О программе",test)
+      testt = "Вот такой вот чатик.\nПока он работает плохо, но я стараюь это исправить.\nВерсия от 31.03.2017 13:26."
+        Qt::MessageBox.about(self,"О программе",testt)
     end
 
     def createMenu
@@ -195,25 +245,37 @@ class Chat < Qt::Widget
 
     end
 
-    def addMessage(user, text)
-      Qt.execute_in_main_thread{
-        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))}
+    def mes_from_net(user, text)#вызывается в networking
+                                # когда приходит сообще, которое не является командой
+      #Qt.execute_in_main_thread{
+        @chats[user].addMessage(user, text)
+        #@chats["server"].smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))}
     end
 
-    def addMessgeFserv(text)
-      Qt.execute_in_main_thread{
-        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + text.to_s.force_encoding(Encoding::UTF_8))}
+    def addMessgeFserv(text) #здесь уже не нужна
+      #Qt.execute_in_main_thread{
+        #@chats["server"].smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + text.to_s.force_encoding(Encoding::UTF_8))}
     end
 
-    
-    def messend()
+    def mes_to_net(mes, whom) #вызывается из вкладки
+      if @net.con == true
+        #text = ";;to:#{whom};m:#{mes}"
+        if whom == "console"
+          @net.makeYamlMes(mes, "command", whom)
+        else
+          @net.makeYamlMes(mes, "message", whom)
+        end
+        #@net.sending(text)
+      end
+    end
+
+    def messend() #здесь уже не нужна
       if not (text = @mesLine.toPlainText.chomp).nil? and @net.con
         @net.sending(text)
         #@message = text
-        addMessage(@userName, text)
+        addMessage(@userName, text) # mes_from_net
         #@smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{@userName}: " + text.to_s)
         @mesLine.clear
       end
     end
-
-end
+  end

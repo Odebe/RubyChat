@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby -w
 require "socket"
-require "differ"
+#require "differ"
+require 'yaml'
+require 'base64'
 
 class Server
 
-
-  def initialize( port, ip )
+  def initialize(port, ip)
     @users = {
       "admin" => "admin",
       "user" => "user"}
@@ -54,33 +55,54 @@ class Server
     end
   end
 
-  def run
-    servers_command
-    loop {
-      Thread.start(@server.accept) do | client |
+  def makeYamlResp(func, from, whom, guts)
+    message["func"] = func
+    message["from"] = from
+    message["whom"] = whom
+    message["guts"] = guts
+    message.to_yaml
+  end
 
-        init_mes = client.gets.chomp.to_s.split(":")
+  def run
+    #servers_command
+    puts "starting"
+    loop {
+      puts "loop"
+
+      Thread.start(@server.accept) do |client|
+        puts "lol"
+        init = client.gets #yaml-file
+        puts init
+        #puts "after init"
+        puts Base64.decode64(init)
+        #init = client.gets.to_s #yaml-file
+        #puts Base64.decode64(init)
+
+       # puts client.gets
+        #init_mes = {:login, :password}
         #force_encoding(Encoding::UTF_8)
-        users_name = init_mes[0]
-        users_pass = init_mes[1]
-      
-        
+        users_name = init_mes[guts][login]
+        users_pass = init_mes[guts][password]
+
             @connections[:clients].each do |other_name, other_client|
-              if init_mes[0] == other_name || client == other_client
-                client.puts "This username already exist"
-                client.puts ";;gb"
+              if users_name == other_name || client == other_client
+                client.puts makeYamlResp("message","server","console","This username already exist")
+                client.puts makeYamlResp("command","server","console","disconnect")
                 Thread.kill self
               end
             end
 
-            if  @users[users_name] == users_pass[0..-2].to_s
+            if @users[users_name] == users_pass 
+              #@users[init_mes[guts][login]] == init_mes[guts][password]
+              
               puts "#{users_name} #{client}"
               @connections[:clients][users_name] = client
-              client.puts ";;ce"
+              #client.puts ";;ce"
+              client.puts makeYamlResp("command","server","console","connection_established")
               listen_user_messages( users_name, client )
             else
-                client.puts "Wrong login or password."
-                client.puts ";;gb"
+                client.puts makeYamlResp("message","server","console","Wrong login or password.") 
+                client.puts makeYamlResp("command","server","console","disconnect")
             end
 
       end
@@ -89,19 +111,23 @@ class Server
   end
 
     def do_command(command, client, username)
-      case command[0..-2]
-      when ";;lsu"
+      case command
+      when "lsu"
         mes = Array.new
         @connections[:clients].each do |key, value|
           mes << key
         end
+
         puts "Online users: #{mes}"
-        client.puts "online users: #{mes}"
+        client.puts makeYamlResp("message","server","console","online users: #{mes}")
+        
 
-      when ";;lsr"
-        client.puts "#{@connections[:rooms]}"
+      when "lsr"
+        client.puts makeYamlResp("message","server","console","#{@connections[:rooms]}")
+        #client.puts "#{@connections[:rooms]}"
 
-      when ";;es"
+      when "es"
+        client.puts makeYamlResp("command","server","console","disconnect")
         client.puts ";;gb"
         @connections[:clients].delete(username)
         puts "#{username} off"
@@ -111,15 +137,14 @@ class Server
 
   def listen_user_messages( username, client )
     loop {
-      msg = client.gets.chomp
-      puts msg[0..1] == ";;"
-      if msg[0..1] == ";;"
-        do_command(msg, client, username)
-        puts "mda"
+      msg = client.gets.chomp.load
+      #puts msg[0..1] == ";;"
+      if msg["func"] == "command"
+        do_command(msg[guts], client, username)
       else
-        @connections[:clients].each do |cl_name, cl_client|
-          unless cl_name == username
-            cl_client.puts "#{username}: #{msg}"
+        @connections[:clients].each do |other_name, other_client|
+          unless other_name == username
+            other_client.puts makeYamlResp("message",username,other_name,msg["guts"])
           end
         end
         #послать сообщение всем в комнате

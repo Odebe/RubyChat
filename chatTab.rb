@@ -1,37 +1,66 @@
 
 class ChatTab < Qt::Widget
 
-	def initialize
+	slots 'messend()'
+
+  attr_accessor :owner, :whom, :smallEditor 
+
+	def initialize(main)
 		super
 
-		@smallEditor = Qt::TextEdit.new
-	    @smallEditor.setReadOnly(true)
-	    #@smallEditor.setPlainText("Начало работы\n==========")
+		@main = main
 
+
+		  @smallEditor = Qt::TextEdit.new
+	    @smallEditor.setReadOnly(true)
 	    @mesLine = Qt::TextEdit.new
-	    #@mesLine.setPlainText("Сообщение.".force_encoding('UTF-8'))
 	    @mesLine.setMaximumHeight(75)
 	    @mesLine.autoFormatting
-	    createMenu
+
 
 	    @sendButton = Qt::PushButton.new('Отправить')
 
 	    @buttonLayout = Qt::HBoxLayout.new do |b|
-	    	#b.addStretch(1)
 	    	b.addWidget(@mesLine)
 	    	b.addWidget(@sendButton)
 	    end
 
-	    lllayout = Qt::VBoxLayout.new do |m|
 	    	@layout = Qt::VBoxLayout.new do |n|
 	        	n.addWidget(@smallEditor)
 	        	n.addLayout(@buttonLayout)
 	        end
-	       	m.addLayout(@layout)
-	        m.menuBar = @menuBar
-	    end
 
-	    setLayout(lllayout)
+	    setLayout(@layout)
 	    connect(@sendButton, SIGNAL('clicked()'), self, SLOT('messend()'))
 	end
+	def getname(owner, naame)
+		@owner = owner
+		@whom = naame
+	end
+	def sendmes
+
+	end
+
+    def addMessage(user, text)
+      Qt.execute_in_main_thread{
+        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))}
+    end
+
+    def addMessgeFserv(text) # вполне уже может оказаться не нужной
+      Qt.execute_in_main_thread{
+        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + text.to_s.force_encoding(Encoding::UTF_8))}
+    end
+
+    
+    def messend()
+      if not (text = @mesLine.toPlainText.chomp).nil?
+      	@main.mes_to_net(text, @whom)
+        #@net.sending(text)
+        #@message = text
+        addMessage(@owner, text)
+        #@smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{@userName}: " + text.to_s)
+        @mesLine.clear
+      end
+    end
+
 end

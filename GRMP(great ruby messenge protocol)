@@ -1,0 +1,30 @@
+Протокол GRMP(great ruby messaging protocol)
+Подключение 
+	login:password
+
+команды серверу начинаются на ";;"
+
+отправка сообщения
+	;;to:кому;m:сообщение(или команда)
+
+;(;ce)
+;;m;;to:кому;;m:сообщение)
+;message
+
+GRMPv2
+Протокол основывается на yaml
+
+---
+time: время отправки отправителя (не обязательно)
+func: connection/command/message
+from: отправитель
+whom: получатель
+if func = "connection"
+  then guts = hash {login, password}
+else
+  guts: "сообщение"
+
+
+задания:
+реализовать приём и отправку сообщений в виде yaml-сущностецй
+

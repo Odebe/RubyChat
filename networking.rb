@@ -3,13 +3,14 @@
 
 
 class Networking
-
+  require 'yaml'
   require 'socket'
 
   attr_accessor  :resp, :addr, :port, :con
 
-  def initialize
- 
+  def initialize(main)
+    @chat = main
+    @con = false
   end
 
   def setServersInfo(addr, port)
@@ -19,17 +20,23 @@ class Networking
 
   def start(uname, pass)
       listen
+      @uname = uname
       #@mainPr.start_chating
-      start_mes = "#{uname}:#{pass}"
-      sending(start_mes)
+      start_mes = [ uname, pass]
+      makeYamlMes(start_mes, "connection", "server")
+      
+      #sending(start_mes)
   end
 
   def connect (uname, pass)
     # сюда дописать в будущем всякие штуки с ssl 
+    if @con == false
       @server = TCPSocket.open(@addr, @port)
       start(uname, pass)
+    end
   end
-
+  
+#уже не нужно
   def setMainProgram(main)
     @chat = main
   end
@@ -37,29 +44,53 @@ class Networking
   #EH03-61288
 
   def do_command(command)
+    case command
+    when "disconnection"
+      @con = false
+      @server.close
+      #@chat
+      @chat.addMessgeFserv("Closing connection. Good bye!") # <------ mes_from_net
+    when "connection_established"
+      @con = true
+      @chat.addMessgeFserv("Connection established, Thank you for joining! Happy chatting") #< ------ mes_from_net
+    end
+=begin
     case command[0..-1]
     when ";;gb"
       @con = false
       @server.close
-      @chat.addMessgeFserv("Closing connection. Good bye!")
+      #@chat
+      @chat.addMessgeFserv("Closing connection. Good bye!") # <------ mes_from_net
     when ";;ce"
       @con = true
-      @chat.addMessgeFserv("Connection established, Thank you for joining! Happy chatting")
+      @chat.addMessgeFserv("Connection established, Thank you for joining! Happy chatting") #< ------ mes_from_net
+    end
+=end
+  end
+
+  def parseYamlResponse(resp)
+    mes = resp.load
+    if mes["func"] == "command" && mes["from"] == "server"
+      do_command(mes["guts"])
+    elsif mes["func"] == "message"
+      @chat.mes_from_net(mes["from"], mes["guts"])
     end
   end
 
   def listen
       @resp = Thread.new do |t|
         loop do
-          mes = @server.gets.chomp
-          if mes[0..1] == ";;"
-            do_command(mes)
-          else
-            @chat.addMessgeFserv(mes)
+          # resp = mes
+          resp = @server.gets
+          parseYamlResponse(resp)
+          #if mes[0..1] == ";;"
+            #do_command(mes)
+          #else
+            #@chat.mes_from_net()
+            #@chat.addMessgeFserv(mes)
           end
           #t[:mesFromServer] = @server.gets.chomp
         end
-      end 
   end
 
   def clearMesFromServer
@@ -70,17 +101,27 @@ class Networking
     @mesFromServer
   end
 
+  def makeYamlMes(guts, func, whom)
+    message = {}
+    message["func"] = func
+    message["from"] = @uname
+    message["whom"] = whom
+    message["guts"] = guts
+    sending(Base64.encode64(message.to_yaml).gsub(/\n/, ""))
+  end
+
   def sending(mes)
-          #data = gets.strip
-          #@sock.send(data, 0, '127.0.0.1', 33333)
-          @server.puts "#{mes} "
-          puts "networking #{mes}"
+    # rename mes to "guts"
+    # from = uname
+    #data = gets.strip
+    #@sock.send(data, 0, '127.0.0.1', 33333)
+    @server.puts mes
+    puts "#{mes}"
   end
 
   def sockClose
-      @server.close
+    @server.close if @server != nil
   end
-  
 end
 
 

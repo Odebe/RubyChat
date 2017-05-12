@@ -89,13 +89,17 @@
   end
 
   def acceptSettings()
-    @settings["login"] = @usernameEditor.text.to_s.force_encoding(Encoding::UTF_8)
-    @settings["server"] =  @addrEditor.text.to_s
-    @settings["port"] =   @portEditor.text.to_i
-    @settings["password"] = @passEditor.text.to_s
-    readSettings
-    File.open("settings.yml", "w").write @settings.to_yaml
-    @mainWindow.getNewSettings
+    if @mainWindow.net.con == false
+      @settings["login"] = @usernameEditor.text.to_s.force_encoding(Encoding::UTF_8)
+      @settings["server"] =  @addrEditor.text.to_s
+      @settings["port"] =   @portEditor.text.to_i
+      @settings["password"] = @passEditor.text.to_s
+      readSettings
+      File.open("settings.yml", "w").write @settings.to_yaml
+      @mainWindow.getNewSettings
+    else
+      @mainWindow.mes_from_net("console", "Настройки не могут быть изменены, пока вы подключены к серверу.")
+    end
     self.close
   end
 
