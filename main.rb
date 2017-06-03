@@ -8,10 +8,8 @@ class MainProgram
 
   def initialize
     @app = Qt::Application.new(ARGV)
-
     @ch = Chat.new
     @ch.show
-    
     @app.exec
   end
 

@@ -10,6 +10,7 @@ class Chat < Qt::Widget
   require './client_settings.rb'
   require './networking.rb'
   require './chatTab.rb'
+  require './onlineTab.rb'
 
     slots 'messend()',
           'connection()',
@@ -93,7 +94,7 @@ class Chat < Qt::Widget
       setLayout(lllayout)
       #connect(lolButton, SIGNAL('clicked()'), self, SLOT('destroyall()'))
 
-      setWindowTitle("RubyChat_3.0_superAlpha")
+      setWindowTitle("rbChat_Alpha_v0.00001")
 
     end
 
@@ -105,7 +106,13 @@ class Chat < Qt::Widget
     end
 
     def addNewTab(name)
-      @chats[name] = ChatTab.new(@self)
+      if name == "online"
+        @chats[name] = OnlineTab.new(@self)
+      else 
+        @chats[name] = ChatTab.new(@self)
+      end
+      #name.equal?("online")? @chats[name] = OnlineTab.new(@self) : @chats[name] = ChatTab.new(@self)
+      #@chats[name] = ChatTab.new(@self)
       @chats[name].owner = @userName
       @chats[name].whom = name
       @tabs.addTab(@chats[name], tr(name))
