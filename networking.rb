@@ -5,6 +5,7 @@
 class Networking
   require 'yaml'
   require 'socket'
+  require 'base64'
 
   attr_accessor  :resp, :addr, :port, :con
 
@@ -22,7 +23,7 @@ class Networking
       listen
       @uname = uname
       #@mainPr.start_chating
-      start_mes = [ uname, pass]
+      start_mes = [uname, pass]
       makeYamlMes(start_mes, "connection", "server")
       
       #sending(start_mes)
@@ -49,10 +50,12 @@ class Networking
       @con = false
       @server.close
       #@chat
-      @chat.addMessgeFserv("Closing connection. Good bye!") # <------ mes_from_net
+      #@chat.addMessgeFserv("Closing connection. Good bye!") # <------ mes_from_net
+      @chat.mes_from_net("console","Closing connection.")
     when "connection_established"
       @con = true
-      @chat.addMessgeFserv("Connection established, Thank you for joining! Happy chatting") #< ------ mes_from_net
+      @chat.mes_from_net("console","Connection established, Thank you for joining! Happy chatting")
+      #@chat.addMessgeFserv("Connection established, Thank you for joining! Happy chatting") #< ------ mes_from_net
     end
 =begin
     case command[0..-1]
@@ -69,11 +72,11 @@ class Networking
   end
 
   def parseYamlResponse(resp)
-    mes = resp.load
+    puts mes = YAML.load(resp)
     if mes["func"] == "command" && mes["from"] == "server"
       do_command(mes["guts"])
     elsif mes["func"] == "message"
-      @chat.mes_from_net(mes["from"], mes["guts"])
+      @chat.mes_from_net(mes["whom"], mes["guts"])
     end
   end
 
@@ -81,7 +84,7 @@ class Networking
       @resp = Thread.new do |t|
         loop do
           # resp = mes
-          resp = @server.gets
+          resp = Base64.decode64(@server.gets)
           parseYamlResponse(resp)
           #if mes[0..1] == ";;"
             #do_command(mes)
@@ -93,11 +96,11 @@ class Networking
         end
   end
 
-  def clearMesFromServer
+  def clearMesFromServer # уже не нужно
     @resp[:mesFromServer] = nil
   end
 
-  def getMesFromServer
+  def getMesFromServer# уже не нужно
     @mesFromServer
   end
 
@@ -116,7 +119,7 @@ class Networking
     #data = gets.strip
     #@sock.send(data, 0, '127.0.0.1', 33333)
     @server.puts mes
-    puts "#{mes}"
+    #puts "#{mes}"
   end
 
   def sockClose

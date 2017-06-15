@@ -43,7 +43,8 @@ class ChatTab < Qt::Widget
 
     def addMessage(user, text)
       Qt.execute_in_main_thread{
-        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))}
+        @smallEditor.append("[" + Time.now.strftime("%d/%m/%Y %H:%M")+"] " + "#{user}: " + text.to_s.force_encoding(Encoding::UTF_8))
+      }
     end
 
     def addMessgeFserv(text) # вполне уже может оказаться не нужной

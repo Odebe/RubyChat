@@ -42,6 +42,8 @@ class Chat < Qt::Widget
       @tabs =  Qt::TabWidget.new
       addNewTab("console")
       addNewTab("online")
+      #addNewTab("admin")
+      #@chats["admin"].addMessage("admin","Добро пожаловать!")
       #@chats["server"].getname(@userName, "server") 
 
 
@@ -94,7 +96,7 @@ class Chat < Qt::Widget
       setLayout(lllayout)
       #connect(lolButton, SIGNAL('clicked()'), self, SLOT('destroyall()'))
 
-      setWindowTitle("rbChat_Alpha_v0.00001")
+      setWindowTitle("rbChat")
 
     end
 
@@ -118,7 +120,7 @@ class Chat < Qt::Widget
       @tabs.addTab(@chats[name], tr(name))
     end
 
-    def makeTabs
+    def makeTabs # вроде бы уже не нужно
       @tabs =  Qt::TabWidget.new
       #i = 0
       @chats.each do |key, value|
@@ -134,7 +136,7 @@ class Chat < Qt::Widget
       @net.sending(clientMes) if clientMes != nil
     end
 
-    def setMainProgram(main)
+    def setMainProgram(main) #уже не нужна
       @mainProgram = main
     end
 
@@ -173,7 +175,7 @@ class Chat < Qt::Widget
 
     def disconnection()
       begin
-        @net.makeYamlMes("disconnect", "command", "console")
+        @net.makeYamlMes("disconnection", "command", "server")
         #@net.sending(";;es")
         #@mainProgram.stop_shatting
         #@net.sockClose
@@ -267,7 +269,7 @@ class Chat < Qt::Widget
     def mes_to_net(mes, whom) #вызывается из вкладки
       if @net.con == true
         #text = ";;to:#{whom};m:#{mes}"
-        if whom == "console"
+        if whom == "console" or whom == "online"
           @net.makeYamlMes(mes, "command", whom)
         else
           @net.makeYamlMes(mes, "message", whom)
@@ -285,4 +287,5 @@ class Chat < Qt::Widget
         @mesLine.clear
       end
     end
-  end
+    
+end

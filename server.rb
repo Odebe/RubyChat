@@ -16,7 +16,7 @@ class Server
     }
     @server = TCPServer.open( ip, port )
     @connections = Hash.new
-    @rooms = Hash.new
+    @rooms = Array.new
     @clients = Hash.new
     @connections[:server] = @server
     @connections[:rooms] = @rooms
@@ -42,13 +42,15 @@ class Server
           elsif item == "r"
             puts "#{@rooms}"
           else
-            puts "You can use 'ls u(sers)' and 'ls r(ooms)'.5"
+            puts "You can use 'ls u(sers)' and 'ls r(ooms)'."
           end
         when "kick"
           username = command[1]
           if username != nil and @connections[:clients].include? username
-            @connections[:clients][username].puts ";;gb"
+            cl_puts(client, makeYamlResp("command","server","console","disconnection"))
             @connections[:clients].delete(username)
+            puts "#{username} off"
+            Thread.kill self
           end
         end
       }.join
@@ -56,38 +58,47 @@ class Server
   end
 
   def makeYamlResp(func, from, whom, guts)
+    message = {}
     message["func"] = func
     message["from"] = from
     message["whom"] = whom
     message["guts"] = guts
     message.to_yaml
   end
+  def cl_puts(client, message)
+    print "Sending to user: \n#{message} \n"
+    client.puts Base64.encode64(message).gsub(/\n/, "")
+  end
+
+  def cl_mes_decode_base64(mes)
+
+  end
 
   def run
-    #servers_command
+    servers_command
     puts "starting"
     loop {
       puts "loop"
 
       Thread.start(@server.accept) do |client|
-        puts "lol"
+        
         init = client.gets #yaml-file
-        puts init
+        #puts init
         #puts "after init"
-        puts Base64.decode64(init)
+        #puts Base64.decode64(init)
         #init = client.gets.to_s #yaml-file
         #puts Base64.decode64(init)
-
+         init_mes = YAML.load(Base64.decode64(init))
        # puts client.gets
         #init_mes = {:login, :password}
         #force_encoding(Encoding::UTF_8)
-        users_name = init_mes[guts][login]
-        users_pass = init_mes[guts][password]
+        users_name = init_mes["guts"][0].chomp
+         users_pass = init_mes["guts"][1].chomp
 
             @connections[:clients].each do |other_name, other_client|
               if users_name == other_name || client == other_client
-                client.puts makeYamlResp("message","server","console","This username already exist")
-                client.puts makeYamlResp("command","server","console","disconnect")
+                cl_puts(client, makeYamlResp("message","server","console","This username already exist"))
+                cl_puts(client, makeYamlResp("command","server","console","disconnect"))
                 Thread.kill self
               end
             end
@@ -95,14 +106,15 @@ class Server
             if @users[users_name] == users_pass 
               #@users[init_mes[guts][login]] == init_mes[guts][password]
               
-              puts "#{users_name} #{client}"
+              puts "#{users_name} #{client} Connected"
               @connections[:clients][users_name] = client
               #client.puts ";;ce"
-              client.puts makeYamlResp("command","server","console","connection_established")
+             # Base64.encode64(message.to_yaml).gsub(/\n/, "")
+              cl_puts(client, makeYamlResp("command","server","console","connection_established"))
               listen_user_messages( users_name, client )
             else
-                client.puts makeYamlResp("message","server","console","Wrong login or password.") 
-                client.puts makeYamlResp("command","server","console","disconnect")
+                cl_puts(client, makeYamlResp("message","server","console","Wrong login or password."))
+                cl_puts(client, makeYamlResp("command","server","console","disconnect"))
             end
 
       end
@@ -119,16 +131,15 @@ class Server
         end
 
         puts "Online users: #{mes}"
-        client.puts makeYamlResp("message","server","console","online users: #{mes}")
+        cl_puts(client, makeYamlResp("message","server","console","online users: #{mes}"))
         
 
       when "lsr"
-        client.puts makeYamlResp("message","server","console","#{@connections[:rooms]}")
+        cl_puts(client, makeYamlResp("message","server","console","#{@connections[:rooms]}"))
         #client.puts "#{@connections[:rooms]}"
 
-      when "es"
-        client.puts makeYamlResp("command","server","console","disconnect")
-        client.puts ";;gb"
+      when "disconnection"
+        cl_puts(client, makeYamlResp("command","server","console","disconnection"))
         @connections[:clients].delete(username)
         puts "#{username} off"
         Thread.kill self
@@ -137,17 +148,16 @@ class Server
 
   def listen_user_messages( username, client )
     loop {
-      msg = client.gets.chomp.load
+     puts  msg = YAML.load(Base64.decode64(client.gets.chomp))
       #puts msg[0..1] == ";;"
       if msg["func"] == "command"
-        do_command(msg[guts], client, username)
+        do_command(msg["guts"], client, username)
       else
         @connections[:clients].each do |other_name, other_client|
           unless other_name == username
             other_client.puts makeYamlResp("message",username,other_name,msg["guts"])
           end
         end
-        #послать сообщение всем в комнате
       end
     }
   end

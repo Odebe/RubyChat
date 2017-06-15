@@ -54,5 +54,4 @@ class MainProgram
   end
 =end
 end
-
 m = MainProgram.new
